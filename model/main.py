@@ -131,6 +131,10 @@ if __name__ == '__main__':
         help='Whether to use GPTQ for weight quantization.'
     )
     parser.add_argument(
+        '--smoothquant', action='store_true',
+        help='Whether to use SmoothQuant.'
+    )
+    parser.add_argument(
         '--percdamp', type=float, default=.01,
         help='Percent of the average Hessian diagonal to use for dampening.'
     )
@@ -239,9 +243,18 @@ if __name__ == '__main__':
         else:
             model = quantize_model_func(model, device=DEV, args=args)
 
+    if args.smoothquant:
+        assert args.abits == 16 and args.wbits == 16, "SmoothQuant only works with fp16 model."
+        print("SmoothQuant...")
+        from smoothquant.smooth import smooth_lm
+        from smoothquant.quant import quantize_llama
+        # model = smooth_lm(model, device=DEV, args=args)
+        model_w8a8 = quantize_llama(model)
+        # model = quantize_llama(model, weight_quant='per_tensor', act_quant='per_tensor', quantize_bmm_input=True)
 
     if args.eval_ppl:
-        datasets = ['wikitext2', 'ptb', 'c4']
+        datasets = ['wikitext2']
+        # datasets = ['wikitext2', 'ptb', 'c4']
 
         for dataset in datasets:
             dataloader, testloader = get_loaders(
