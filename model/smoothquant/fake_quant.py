@@ -3,6 +3,7 @@ from torch import nn
 from functools import partial
 
 
+@torch.no_grad()
 def quantize_weight_per_channel_absmax(w, n_bits=8):
     # w: (out_features, in_features)
     scales = w.abs().max(dim=-1, keepdim=True)[0]
