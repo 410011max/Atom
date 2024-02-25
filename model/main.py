@@ -135,6 +135,14 @@ if __name__ == '__main__':
         help='Whether to use SmoothQuant.'
     )
     parser.add_argument(
+        '--w_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_channel'],
+        help='Type of weight quantization.'
+    )
+    parser.add_argument(
+        '--a_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_token'],
+        help='Type of activation quantization.'
+    )
+    parser.add_argument(
         '--percdamp', type=float, default=.01,
         help='Percent of the average Hessian diagonal to use for dampening.'
     )
@@ -249,8 +257,7 @@ if __name__ == '__main__':
         from smoothquant.smooth import smooth_lm
         from smoothquant.quant import quantize_llama
         # model = smooth_lm(model, device=DEV, args=args)
-        model_w8a8 = quantize_llama(model)
-        # model = quantize_llama(model, weight_quant='per_tensor', act_quant='per_tensor', quantize_bmm_input=True)
+        model_w8a8 = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant, quantize_bmm_input=True)
 
     if args.eval_ppl:
         datasets = ['wikitext2']
