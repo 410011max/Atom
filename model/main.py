@@ -135,16 +135,20 @@ if __name__ == '__main__':
         help='Whether to use SmoothQuant.'
     )
     parser.add_argument(
+        '--act_scales', type=str, default=None,
+        help='Path to the activation scales for SmoothQuant.'
+    )
+    parser.add_argument(
         '--alpha', type=float, default=0.5,
         help='Alpha value for SmoothQuant.'
     )
     parser.add_argument(
         '--w_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_channel'],
-        help='Type of weight quantization.'
+        help='Type of weight quantization for SmoothQuant.'
     )
     parser.add_argument(
         '--a_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_token'],
-        help='Type of activation quantization.'
+        help='Type of activation quantization for SmoothQuant.'
     )
     parser.add_argument(
         '--percdamp', type=float, default=.01,
@@ -260,8 +264,9 @@ if __name__ == '__main__':
         print("SmoothQuant...")
         from smoothquant.smooth import smooth_lm
         from smoothquant.quant import quantize_llama
-        act_scales = torch.load('model/act_scales/llama2-7b.pt')
-        smooth_lm(model, act_scales, args.alpha)
+        if args.act_scales:
+            act_scales = torch.load(args.act_scales)
+            smooth_lm(model, act_scales, args.alpha)
         model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant, quantize_bmm_input=True)
 
     if args.eval_ppl:
