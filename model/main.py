@@ -135,6 +135,10 @@ if __name__ == '__main__':
         help='Whether to use SmoothQuant.'
     )
     parser.add_argument(
+        '--alpha', type=float, default=0.5,
+        help='Alpha value for SmoothQuant.'
+    )
+    parser.add_argument(
         '--w_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_channel'],
         help='Type of weight quantization.'
     )
@@ -256,8 +260,9 @@ if __name__ == '__main__':
         print("SmoothQuant...")
         from smoothquant.smooth import smooth_lm
         from smoothquant.quant import quantize_llama
-        # model = smooth_lm(model, device=DEV, args=args)
-        model_w8a8 = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant, quantize_bmm_input=True)
+        act_scales = torch.load('model/act_scales/llama2-7b.pt')
+        smooth_lm(model, act_scales, args.alpha)
+        model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant, quantize_bmm_input=True)
 
     if args.eval_ppl:
         datasets = ['wikitext2']
