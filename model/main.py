@@ -1,3 +1,4 @@
+import os
 import torch
 from quant import *
 from outlier import *
@@ -13,7 +14,7 @@ from lm_eval import tasks as lm_tasks
 from lm_eval import evaluator as lm_evaluator
 
 
-def get_llama(model):
+def get_llama(args):
     import torch
     def skip(*args, **kwargs):
         pass
@@ -21,11 +22,13 @@ def get_llama(model):
     torch.nn.init.uniform_ = skip
     torch.nn.init.normal_ = skip
     from transformers import LlamaForCausalLM
-    model = LlamaForCausalLM.from_pretrained(model, torch_dtype=torch.float16)
-    model.seqlen = 2048
+    model = LlamaForCausalLM.from_pretrained(
+        args.model, torch_dtype=torch.float32 if args.mx else torch.float16
+    )
+    model.seqlen = args.seqlen
     return model
 
-def get_opt(model):
+def get_opt(args):
     import torch
     def skip(*args, **kwargs):
         pass
@@ -33,7 +36,9 @@ def get_opt(model):
     torch.nn.init.uniform_ = skip
     torch.nn.init.normal_ = skip
     from transformers import OPTForCausalLM
-    model = OPTForCausalLM.from_pretrained(model, torch_dtype=torch.float16)
+    model = OPTForCausalLM.from_pretrained(
+        args.model, torch_dtype=torch.float32 if args.mx else torch.float16
+    )
     model.seqlen = model.config.max_position_embeddings
     return model
 
@@ -47,6 +52,10 @@ if __name__ == '__main__':
     parser.add_argument(
         'model', type=str,
         help='LlaMa model to load; pass location of hugginface converted checkpoint.'
+    )
+    parser.add_argument(
+        '--seqlen', type=int, default=2048,
+        help='Sequence length for the model.'
     )
     parser.add_argument(
         'dataset', type=str, choices=['wikitext2', 'ptb', 'c4'],
@@ -191,13 +200,19 @@ if __name__ == '__main__':
         help='Path to store the reordering indices and quantized weights.'
     )
     
+    # microxscaling settings
+    parser.add_argument("--mx", action="store_true", help="Whether to use microxcaling")
+    parser.add_argument("--mx_format", type=str, choices=["int8", "int4", "fp8_e5m2", "fp8_e4m3",
+                            "fp6_e3m2", "fp6_e2m3", "fp4_e2m1"], help="MX element format")
+    parser.add_argument("--mx_block_size", type=int, default=32, help="MX block size")
+    
     args = parser.parse_args()
 
     model_name = args.model.lower().split('/')[-1]
     assert model_name != None, "Please check the model path."
 
     if "llama" in args.model.lower():
-        model = get_llama(args.model)
+        model = get_llama(args)
         get_act_stats_func = get_act_stats_llama
         reorder_model_func = reorder_model_llama
         add_act_quant_wrapper_func = add_act_quant_wrapper_llama
@@ -205,7 +220,7 @@ if __name__ == '__main__':
         quantize_model_func = quantize_model_llama
         eval_func = llama_eval
     elif "opt" in args.model.lower():
-        model = get_opt(args.model)
+        model = get_opt(args)
         get_act_stats_func = get_act_stats_opt
         reorder_model_func = reorder_model_opt
         add_act_quant_wrapper_func = add_act_quant_wrapper_opt
@@ -213,8 +228,6 @@ if __name__ == '__main__':
         quantize_model_func = quantize_model_opt
         eval_func = opt_eval
     model.eval()
-
-    import os
 
     if args.reorder:
         if args.cache_index == False:
@@ -259,15 +272,33 @@ if __name__ == '__main__':
         else:
             model = quantize_model_func(model, device=DEV, args=args)
 
-    if args.smoothquant:
-        assert args.abits == 16 and args.wbits == 16, "SmoothQuant only works with fp16 model."
-        print("SmoothQuant...")
+    if args.act_scales:
+        print("Smooth...")
         from smoothquant.smooth import smooth_lm
+        act_scales = torch.load(args.act_scales)
+        smooth_lm(model, act_scales, args.alpha)
+
+    if args.smoothquant:
+        assert args.abits == 16 and args.wbits == 16, "SmoothQuant only works without Atom."
+        print("SmoothQuant...")
         from smoothquant.quant import quantize_llama
-        if args.act_scales:
-            act_scales = torch.load(args.act_scales)
-            smooth_lm(model, act_scales, args.alpha)
         model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant, quantize_bmm_input=True)
+
+    if (args.mx):
+        print("Using microxscaling dataformat.")
+        from mx import mx_mapping
+        from mx import finalize_mx_specs
+        mx_specs = {
+        'w_elem_format': args.mx_format, #'int8',#'fp6_e3m2',
+        'a_elem_format': args.mx_format, #'int8',#'fp6_e3m2',
+        'block_size': args.mx_block_size, #32,
+        'bfloat': 16,
+        'custom_cuda': True,
+        # For quantization-aware finetuning, do backward pass in FP32
+        'quantize_backprop': False,
+        }
+        mx_specs = finalize_mx_specs(mx_specs)
+        mx_mapping.inject_pyt_ops(mx_specs)
 
     if args.eval_ppl:
         datasets = ['wikitext2']
