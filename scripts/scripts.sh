@@ -17,6 +17,18 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 
 ##################################################################
 
+# Mx
+CUDA_VISIBLE_DEVICES=2 \
+python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
+    --mx --mx_format int8 --mx_block_size 32 --eval_ppl --seqlen 1024
+
+# Mx (smooth)
+CUDA_VISIBLE_DEVICES=3 \
+python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
+    --act_scales 'act_scales/llama2-7b-hf.pt' --alpha 0.85 \
+    --mx --mx_format int8 --mx_block_size 32 --eval_ppl --seqlen 1024
+
+##################################################################
 # SmoothQuant (per_tensor)
 CUDA_VISIBLE_DEVICES=0 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
