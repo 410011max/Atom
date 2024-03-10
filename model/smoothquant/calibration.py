@@ -38,6 +38,7 @@ def get_act_scales(model, tokenizer, dataset_path, num_samples=512, seq_len=512)
 
     # dataset = load_dataset("json", data_files=dataset_path, split="train")
     dataset = load_dataset("monology/pile-uncopyrighted", data_files="val.jsonl.zst", split="train")
+    # dataset = load_dataset('wikitext', 'wikitext-2-raw-v1', split='train')
     dataset = dataset.shuffle(seed=42)
 
     for i in tqdm(range(num_samples)):
@@ -98,6 +99,7 @@ def get_static_decoder_layer_scales(
     pbar = tqdm(range(num_samples))
     # dataset = load_dataset("json", data_files=dataset_path, split="train")
     dataset = load_dataset("monology/pile-uncopyrighted", data_files="val.jsonl.zst", split="train")
+    # dataset = load_dataset('wikitext', 'wikitext-2-raw-v1', split='train')
     dataset = dataset.shuffle(seed=42)
     for i in pbar:
         input_ids = tokenizer(
