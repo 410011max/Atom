@@ -2,7 +2,7 @@ from smoothquant.fake_quant import W8A8Linear
 from transformers.models.llama.modeling_llama import LlamaAttention, LlamaMLP
 
 def quantize_llama(model, weight_quant='per_tensor', act_quant='per_tensor', quantize_bmm_input=True, scales=None):
-    for name, m in model.model.named_modules():
+    for name, m in model.named_modules():
         if isinstance(m, LlamaMLP):
             m.gate_proj = W8A8Linear.from_float(m.gate_proj, weight_quant=weight_quant, act_quant=act_quant,
                                                 scales=scales[name] if scales else None)
