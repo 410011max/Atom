@@ -24,10 +24,11 @@ def quantize_weight_per_tensor_absmax(w, n_bits=8):
 
 
 @torch.no_grad()
-def quantize_activation_per_token_absmax(t, n_bits=8):
+def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
     t_shape = t.shape
     t.view(-1, t_shape[-1])
-    scales = t.abs().max(dim=-1, keepdim=True)[0]
+    if scales is None:
+        scales = t.abs().max(dim=-1, keepdim=True)[0]
     q_max = 2 ** (n_bits - 1) - 1
     scales.clamp_(min=1e-5).div_(q_max)
     t.div_(scales).round_().mul_(scales)
@@ -35,10 +36,13 @@ def quantize_activation_per_token_absmax(t, n_bits=8):
 
 
 @torch.no_grad()
-def quantize_activation_per_tensor_absmax(t, n_bits=8):
+def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None):
     t_shape = t.shape
     t.view(-1, t_shape[-1])
-    scales = t.abs().max()
+    if scales is None:
+        # scales = t.abs().max()
+        scales = t.abs().max(dim=-1, keepdim=True)[0]
+    scales = scales.max()
     q_max = 2 ** (n_bits - 1) - 1
     scales.clamp_(min=1e-5).div_(q_max)
     t.div_(scales).round_().mul_(scales)
@@ -53,6 +57,7 @@ class W8A8Linear(nn.Module):
         bias=True,
         act_quant="per_token",
         quantize_output=False,
+        scales=None,
     ):
         super().__init__()
         self.in_features = in_features
@@ -79,16 +84,25 @@ class W8A8Linear(nn.Module):
 
         if act_quant == "per_token":
             self.act_quant_name = "per_token"
-            self.act_quant = partial(quantize_activation_per_token_absmax, n_bits=8)
+            self.act_quant = partial(
+                quantize_activation_per_token_absmax, n_bits=8, 
+                scales=scales['input'] if scales else None
+            )
         elif act_quant == "per_tensor":
             self.act_quant_name = "per_tensor"
-            self.act_quant = partial(quantize_activation_per_tensor_absmax, n_bits=8)
+            self.act_quant = partial(
+                quantize_activation_per_tensor_absmax, n_bits=8, 
+                scales=scales['input'] if scales else None
+            )
         else:
             raise ValueError(f"Invalid act_quant: {act_quant}")
 
         if quantize_output:
             self.output_quant_name = self.act_quant_name
-            self.output_quant = self.act_quant
+            self.output_quant = partial(
+                self.act_quant.func, n_bits=8, 
+                scales=scales['output'] if scales else None
+            )
         else:
             self.output_quant_name = "None"
             self.output_quant = lambda x: x
@@ -109,7 +123,7 @@ class W8A8Linear(nn.Module):
 
     @staticmethod
     def from_float(
-        module, weight_quant="per_channel", act_quant="per_token", quantize_output=False
+        module, weight_quant="per_channel", act_quant="per_token", quantize_output=False, scales=None
     ):
         assert isinstance(module, torch.nn.Linear)
         new_module = W8A8Linear(
@@ -118,6 +132,7 @@ class W8A8Linear(nn.Module):
             module.bias is not None,
             act_quant=act_quant,
             quantize_output=quantize_output,
+            scales=scales,
         )
         if weight_quant == "per_channel":
             new_module.weight = quantize_weight_per_channel_absmax(

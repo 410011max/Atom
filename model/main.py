@@ -144,8 +144,12 @@ if __name__ == '__main__':
         help='Whether to use SmoothQuant.'
     )
     parser.add_argument(
+        '--static_scales', type=str, default=None,
+        help='Path to the staitc activation scales for SmoothQuant.'
+    )
+    parser.add_argument(
         '--act_scales', type=str, default=None,
-        help='Path to the activation scales for SmoothQuant.'
+        help='Path to the smooth scales for SmoothQuant.'
     )
     parser.add_argument(
         '--alpha', type=float, default=0.5,
@@ -238,7 +242,10 @@ if __name__ == '__main__':
             act_scales = get_act_stats_func(
                 model, dataloader, DEV, metric=args.act_sort_metric
             )
-
+            for layer in act_scales.keys():
+                print(layer, act_scales[layer].shape)
+            exit(0)
+            
             print("Getting reording index...")
             reorder_index = get_reorder_index(model, act_scales)
 
@@ -277,12 +284,15 @@ if __name__ == '__main__':
         from smoothquant.smooth import smooth_lm
         act_scales = torch.load(args.act_scales)
         smooth_lm(model, act_scales, args.alpha)
+        exit(0)
 
     if args.smoothquant:
         assert args.abits == 16 and args.wbits == 16, "SmoothQuant only works without Atom."
         print("SmoothQuant...")
         from smoothquant.quant import quantize_llama
-        model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant, quantize_bmm_input=True)
+        scales = torch.load(args.static_scales) if args.static_scales else None
+        model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant,
+                               quantize_bmm_input=True, scales=scales)
 
     if (args.mx):
         print("Using microxscaling dataformat.")
