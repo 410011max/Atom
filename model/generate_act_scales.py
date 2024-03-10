@@ -19,6 +19,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model-name', type=str,
                         default='facebook/opt-1.3b', help='model name')
+    parser.add_argument('--mode', type=str, choices=['smooth', 'static'], help='calibration mode')
     parser.add_argument('--output-path', type=str, default='act_scales/opt-1.3b.pt',
                         help='where to save the act scales')
     parser.add_argument('--dataset-path', type=str, default='dataset/val.jsonl.zst',
@@ -40,10 +41,12 @@ def main():
     #     print('You can download the validation dataset of the Pile at https://mystic.the-eye.eu/public/AI/pile/val.jsonl.zst')
     #     raise FileNotFoundError
 
-    # act_scales = get_act_scales(model, tokenizer, args.dataset_path,
-    #                             args.num_samples, args.seq_len)
-    decoder_layer_scales, act_scales = get_static_decoder_layer_scales(model, tokenizer, args.dataset_path,
-                                                 args.num_samples, args.seq_len)
+    if args.mode == 'smooth':
+        act_scales = get_act_scales(model, tokenizer, args.dataset_path,
+                                args.num_samples, args.seq_len)
+    elif args.mode == 'static':
+        _, act_scales = get_static_decoder_layer_scales(model, tokenizer, args.dataset_path, 
+                                                        args.num_samples, args.seq_len)
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     torch.save(act_scales, args.output_path)
