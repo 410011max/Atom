@@ -7,7 +7,7 @@ from transformers import (
 )
 import argparse
 
-from smoothquant.calibration import get_act_scales
+from smoothquant.calibration import get_act_scales, get_static_decoder_layer_scales
 
 def build_model_and_tokenizer(model_name):
     tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
@@ -40,8 +40,10 @@ def main():
     #     print('You can download the validation dataset of the Pile at https://mystic.the-eye.eu/public/AI/pile/val.jsonl.zst')
     #     raise FileNotFoundError
 
-    act_scales = get_act_scales(model, tokenizer, args.dataset_path,
-                                args.num_samples, args.seq_len)
+    # act_scales = get_act_scales(model, tokenizer, args.dataset_path,
+    #                             args.num_samples, args.seq_len)
+    decoder_layer_scales, act_scales = get_static_decoder_layer_scales(model, tokenizer, args.dataset_path,
+                                                 args.num_samples, args.seq_len)
 
     os.makedirs(os.path.dirname(args.output_path), exist_ok=True)
     torch.save(act_scales, args.output_path)
