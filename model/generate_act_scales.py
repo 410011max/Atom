@@ -26,6 +26,8 @@ def parse_args():
                         help='location of the calibration dataset, we use the validation set of the Pile dataset')
     parser.add_argument('--num-samples', type=int, default=512)
     parser.add_argument('--seq-len', type=int, default=512)
+    parser.add_argument('--smooth-scales', type=str, default=None, help='Path to the smooth scales.')
+    parser.add_argument('--alpha', type=float, default=0.5, help='The alpha parameter for the smooth scales.')
     args = parser.parse_args()
     return args
 
@@ -45,6 +47,12 @@ def main():
         act_scales = get_act_scales(model, tokenizer, args.dataset_path,
                                 args.num_samples, args.seq_len)
     elif args.mode == 'static':
+        if args.smooth_scales:
+            print("Smooth...")
+            from smoothquant.smooth import smooth_lm
+            smooth_scales = torch.load(args.smooth_scales)
+            smooth_lm(model, smooth_scales, args.alpha)
+
         _, act_scales = get_static_decoder_layer_scales(model, tokenizer, args.dataset_path, 
                                                         args.num_samples, args.seq_len)
 
