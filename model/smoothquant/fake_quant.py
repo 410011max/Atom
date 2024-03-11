@@ -25,26 +25,26 @@ def quantize_weight_per_tensor_absmax(w, n_bits=8):
 
 @torch.no_grad()
 def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
-    t_shape = t.shape
-    t.view(-1, t_shape[-1])
     if scales is None:
         scales = t.abs().max(dim=-1, keepdim=True)[0]
+    print(f"Dynamic scales: {t.abs().max(dim=-1, keepdim=True)[0]}")
+    print(f"Static scales: {scales}, {scales.max()}")
     q_max = 2 ** (n_bits - 1) - 1
     scales.clamp_(min=1e-5).div_(q_max)
+    # TODO: work around
+    scales = scales.to(t.device)
     t.div_(scales).round_().mul_(scales)
     return t
 
 
 @torch.no_grad()
 def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None):
-    t_shape = t.shape
-    t.view(-1, t_shape[-1])
-    if scales is None:
-        # scales = t.abs().max()
-        scales = t.abs().max(dim=-1, keepdim=True)[0]
-    scales = scales.max()
+    scales = scales.max() if scales else t.abs().max()
+    print(f"Dynamic scales: {t.abs().max()}, Static scales: {scales}")
     q_max = 2 ** (n_bits - 1) - 1
     scales.clamp_(min=1e-5).div_(q_max)
+    # TODO: work around
+    scales = scales.to(t.device)
     t.div_(scales).round_().mul_(scales)
     return t
 
@@ -81,18 +81,24 @@ class W8A8Linear(nn.Module):
             )
         else:
             self.register_buffer("bias", None)
-
+        if scales:
+            self.register_buffer("in_scales", scales['input'])
+            self.register_buffer("out_scales", scales['output'])
+        else:
+            self.register_buffer("in_scales", None)
+            self.register_buffer("out_scales", None)
+        
         if act_quant == "per_token":
             self.act_quant_name = "per_token"
             self.act_quant = partial(
                 quantize_activation_per_token_absmax, n_bits=8, 
-                scales=scales['input'] if scales else None
+                scales=self.in_scales
             )
         elif act_quant == "per_tensor":
             self.act_quant_name = "per_tensor"
             self.act_quant = partial(
                 quantize_activation_per_tensor_absmax, n_bits=8, 
-                scales=scales['input'] if scales else None
+                scales=self.in_scales
             )
         else:
             raise ValueError(f"Invalid act_quant: {act_quant}")
@@ -101,7 +107,7 @@ class W8A8Linear(nn.Module):
             self.output_quant_name = self.act_quant_name
             self.output_quant = partial(
                 self.act_quant.func, n_bits=8, 
-                scales=scales['output'] if scales else None
+                scales=self.out_scales
             )
         else:
             self.output_quant_name = "None"
@@ -112,6 +118,11 @@ class W8A8Linear(nn.Module):
         self.weight = self.weight.to(*args, **kwargs)
         if self.bias is not None:
             self.bias = self.bias.to(*args, **kwargs)
+        # TODO: It didn't work
+        # if self.in_scales is not None:
+        #     self.in_scales = self.in_scales.to(*args, **kwargs)
+        # if self.out_scales is not None:
+        #     self.out_scales = self.out_scales.to(*args, **kwargs)
         return self
 
     @torch.no_grad()
