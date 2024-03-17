@@ -73,6 +73,7 @@ def get_static_decoder_layer_scales(
         # TODO: check the correct static scale
         comming_max_x = x.view(-1, x.shape[-1]).abs().detach().max(dim=-1, keepdim=True)[0]
         if comming_max_x.shape[0] != 2048:
+            # fix for the last input which cotaion tokens less than 2048 
             return
         # hidden_dim = x.shape[-1]
         # x = x.view(-1, hidden_dim).abs().detach()
