@@ -69,9 +69,14 @@ def get_static_decoder_layer_scales(
     def stat_io_hook(m, x, y, name):
         if isinstance(x, tuple):
             x = x[0]
-        hidden_dim = x.shape[-1]
-        x = x.view(-1, hidden_dim).abs().detach()
-        comming_max_x = torch.max(x, dim=0)[0].float().cpu()
+
+        # TODO: check the correct static scale
+        comming_max_x = x.view(-1, x.shape[-1]).abs().detach().max(dim=-1, keepdim=True)[0]
+        if comming_max_x.shape[0] != 2048:
+            return
+        # hidden_dim = x.shape[-1]
+        # x = x.view(-1, hidden_dim).abs().detach()
+        # comming_max_x = torch.max(x, dim=0)[0].float().cpu()
         if name not in act_dict or "input" not in act_dict[name]:
             act_dict[name]["input"] = comming_max_x
         else:
@@ -80,9 +85,10 @@ def get_static_decoder_layer_scales(
             )
         if isinstance(y, tuple):
             y = y[0]
-        hidden_dim = y.shape[-1]
-        y = y.view(-1, hidden_dim).abs().detach()
-        comming_max_y = torch.max(y, dim=0)[0].float().cpu()
+        comming_max_y = y.view(-1, y.shape[-1]).abs().detach().max(dim=-1, keepdim=True)[0]
+        # hidden_dim = y.shape[-1]
+        # y = y.view(-1, hidden_dim).abs().detach()
+        # comming_max_y = torch.max(y, dim=0)[0].float().cpu()
         if name not in act_dict or "output" not in act_dict[name]:
             act_dict[name]["output"] = comming_max_y
         else:
@@ -98,8 +104,8 @@ def get_static_decoder_layer_scales(
     print("Collecting activation scales...")
     pbar = tqdm(range(num_samples))
     # dataset = load_dataset("json", data_files=dataset_path, split="train")
-    dataset = load_dataset("monology/pile-uncopyrighted", data_files="val.jsonl.zst", split="train")
-    # dataset = load_dataset('wikitext', 'wikitext-2-raw-v1', split='train')
+    # dataset = load_dataset("monology/pile-uncopyrighted", data_files="val.jsonl.zst", split="train")
+    dataset = load_dataset('wikitext', 'wikitext-2-raw-v1', split='train')
     dataset = dataset.shuffle(seed=42)
     for i in pbar:
         input_ids = tokenizer(
