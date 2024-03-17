@@ -39,15 +39,38 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 # SmoothQuant (per_channel)
 CUDA_VISIBLE_DEVICES=1 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --smoothquant --smooth_scales 'act_scales/llama2-7b-hf.pt' \
+    --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
     --w_quant 'per_channel' --a_quant 'per_token' --alpha 0.85 \
     --eval_ppl
 
-# SmoothQuant (per_tensor) (static) (no smooth)
-CUDA_VISIBLE_DEVICES=1 \
+# SmoothQuant (per_tensor) (static)
+CUDA_VISIBLE_DEVICES=0 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --static_scales 'act_scales/llama2-7b-hf-static.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
+    --eval_ppl
+
+# SmoothQuant (per_token) (static)
+CUDA_VISIBLE_DEVICES=1 \
+python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
+    --smoothquant --static_scales 'act_scales/llama2-7b-hf-static.pt' \
+    --w_quant 'per_channel' --a_quant 'per_token' \
+    --eval_ppl
+
+# SmoothQuant (per_tensor) (static) (smooth)
+CUDA_VISIBLE_DEVICES=0 \
+python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
+    --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
+    --static_scales 'act_scales/llama2-7b-hf-smooth-static.pt' \
+    --w_quant 'per_tensor' --a_quant 'per_tensor' \
+    --eval_ppl
+
+# SmoothQuant (per_tensor) (static) (smooth)
+CUDA_VISIBLE_DEVICES=1 \
+python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
+    --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
+    --static_scales 'act_scales/llama2-7b-hf-smooth-static.pt' \
+    --w_quant 'per_channel' --a_quant 'per_token' \
     --eval_ppl
 
 ##################################################################
