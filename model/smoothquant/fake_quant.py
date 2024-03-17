@@ -25,6 +25,8 @@ def quantize_weight_per_tensor_absmax(w, n_bits=8):
 
 @torch.no_grad()
 def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
+    # static_scales = scales.copy()
+    # scales = None
     # if scales is not None:
     #     print(f"Dynamic scales: {t.abs().max(dim=-1, keepdim=True)[0]}")
     #     print(f"Static scales: {scales}, max: {scales.max()}")
@@ -38,12 +40,14 @@ def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
 
 @torch.no_grad()
 def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None):
+    # static_scales = scales.clone().max()
+    # scales = None
     # if scales is not None:
     #     print(f"Dynamic scales: {t.abs().max()}, Static scales: {scales.max()}")
     scales = scales.max() if scales is not None else t.abs().max()
     q_max = 2 ** (n_bits - 1) - 1
     scales = scales.clamp(min=1e-5).div(q_max).to(t.device)
-    t.div_(scales).round_().mul_(scales)
+    t.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
     return t
 
 
