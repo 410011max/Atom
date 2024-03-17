@@ -6,7 +6,7 @@ def quantize_llama(model, weight_quant='per_tensor', act_quant='per_tensor', qua
     progress_bar = tqdm(list(model.named_modules()))
     for name, m in tqdm(list(model.named_modules())):
         progress_bar.set_description(f"Processing {name}")
-        # if name == "model.layers.1.self_attn":
+        # if name == "model.layers.0.mlp":
         #     break
         if isinstance(m, LlamaMLP):
             m.gate_proj = W8A8Linear.from_float(m.gate_proj, weight_quant=weight_quant, act_quant=act_quant,
