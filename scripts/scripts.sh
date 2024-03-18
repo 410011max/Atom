@@ -65,7 +65,7 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
     --eval_ppl
 
-# SmoothQuant (per_tensor) (static) (smooth)
+# SmoothQuant (per_token) (static) (smooth)
 CUDA_VISIBLE_DEVICES=1 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
