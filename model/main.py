@@ -152,6 +152,10 @@ if __name__ == '__main__':
         help='Path to the smooth scales for SmoothQuant.'
     )
     parser.add_argument(
+        '--quantize_output', action='store_true',
+        help='Whether to quantize the output of INT8 Matrix Multiplication.'
+    )
+    parser.add_argument(
         '--alpha', type=float, default=0.5,
         help='Alpha value for SmoothQuant.'
     )
@@ -290,7 +294,7 @@ if __name__ == '__main__':
             print("Static scales provided. Using static scales for SmoothQuant.")
         scales = torch.load(args.static_scales) if args.static_scales else None
         model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant,
-                               quantize_bmm_input=True, scales=scales)
+                               quantize_output=args.quantize_output, scales=scales)
 
     if (args.mx):
         print("Using microxscaling dataformat.")
