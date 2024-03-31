@@ -13,7 +13,7 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 # W16A16
 CUDA_VISIBLE_DEVICES=0 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --eval_ppl
+    --eval_ppl --seqlen 512
 
 ##################################################################
 
@@ -30,11 +30,11 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 
 ##################################################################
 # SmoothQuant (per_tensor)
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES=1 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' --alpha 0.85 \
-    --eval_ppl
+    --eval_ppl --quantize_output
 
 # SmoothQuant (per_channel)
 CUDA_VISIBLE_DEVICES=1 \
@@ -44,11 +44,11 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --eval_ppl
 
 # SmoothQuant (per_tensor) (static)
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES=1 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --static_scales 'act_scales/llama2-7b-hf-static.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
-    --eval_ppl
+    --eval_ppl --quantize_output
 
 # SmoothQuant (per_token) (static)
 CUDA_VISIBLE_DEVICES=1 \
@@ -63,7 +63,7 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
     --static_scales 'act_scales/llama2-7b-hf-smooth-static.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
-    --eval_ppl
+    --eval_ppl --quantize_output
 
 # SmoothQuant (per_token) (static) (smooth)
 CUDA_VISIBLE_DEVICES=1 \
@@ -71,7 +71,7 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --smooth_scales 'act_scales/llama2-7b-hf-smooth.pt' \
     --static_scales 'act_scales/llama2-7b-hf-smooth-static.pt' \
     --w_quant 'per_channel' --a_quant 'per_token' \
-    --eval_ppl
+    --eval_ppl --quantize_output
 
 ##################################################################
 # Atom W8A8 per-channel

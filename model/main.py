@@ -156,6 +156,10 @@ if __name__ == '__main__':
         help='Whether to quantize the output of INT8 Matrix Multiplication.'
     )
     parser.add_argument(
+        '--skip_down_proj', action='store_true',
+        help='Whether to skip quantizing down_proj in LlamaMLP.'
+    )
+    parser.add_argument(
         '--alpha', type=float, default=0.5,
         help='Alpha value for SmoothQuant.'
     )
@@ -294,7 +298,7 @@ if __name__ == '__main__':
             print("Static scales provided. Using static scales for SmoothQuant.")
         scales = torch.load(args.static_scales) if args.static_scales else None
         model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant,
-                               quantize_output=args.quantize_output, scales=scales)
+                               quantize_output=args.quantize_output, scales=scales, skip_down_proj=args.skip_down_proj)
 
     if (args.mx):
         print("Using microxscaling dataformat.")
