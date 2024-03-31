@@ -164,7 +164,7 @@ if __name__ == '__main__':
         help='Alpha value for SmoothQuant.'
     )
     parser.add_argument(
-        '--w_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_channel'],
+        '--w_quant', type=str, default='per_tensor', choices=['per_tensor', 'per_channel', 'per_8_channel'],
         help='Type of weight quantization for SmoothQuant.'
     )
     parser.add_argument(
