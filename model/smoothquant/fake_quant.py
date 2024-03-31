@@ -6,16 +6,30 @@ from functools import partial
 @torch.no_grad()
 def quantize_weight_per_channel_absmax(w, n_bits=8):
     # w: (out_features, in_features)
+    w = w.clone()
     scales = w.abs().max(dim=-1, keepdim=True)[0]
     q_max = 2 ** (n_bits - 1) - 1
     scales.clamp_(min=1e-5).div_(q_max)
-    w.div_(scales).round_().mul_(scales)
+    w.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
     return w
 
+@torch.no_grad()
+def quantize_weight_per_8_channel_absmax(w, n_bits=8):
+    # w: (out_features, in_features)
+    w = w.clone()
+    shape = w.shape
+    w = w.reshape(-1, 8, shape[1])
+    scales = w.abs().amax(dim=(1, 2), keepdim=True)
+    q_max = 2 ** (n_bits - 1) - 1
+    scales.clamp_(min=1e-5).div_(q_max)
+    w.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
+    w = w.reshape(shape)
+    return w
 
 @torch.no_grad()
 def quantize_weight_per_tensor_absmax(w, n_bits=8):
     # w: (out_features, in_features)
+    w = w.clone()
     scales = w.abs().max()
     q_max = 2 ** (n_bits - 1) - 1
     scales.clamp_(min=1e-5).div_(q_max)
@@ -40,11 +54,14 @@ def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
 
 @torch.no_grad()
 def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None):
+    # if scales is not None and scales.max() > 100:
+    #     return t
     # static_scales = scales.clone().max()
     # scales = None
     # if scales is not None:
     #     print(f"Dynamic scales: {t.abs().max()}, Static scales: {scales.max()}")
     scales = scales.max() if scales is not None else t.abs().max()
+    # scales = scales.clamp(max=50.0)
     q_max = 2 ** (n_bits - 1) - 1
     scales = scales.clamp(min=1e-5).div(q_max).to(t.device)
     t.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
@@ -141,6 +158,20 @@ class W8A8Linear(nn.Module):
             new_module.weight = quantize_weight_per_channel_absmax(
                 module.weight, n_bits=8
             )  # use 8-bit integer for weight
+        elif weight_quant == "per_8_channel":
+            new_module.weight = quantize_weight_per_8_channel_absmax(
+                module.weight, n_bits=8
+            )
+            temp = quantize_weight_per_8_channel_absmax(
+                module.weight, n_bits=8
+            )
+            temp2 = quantize_weight_per_channel_absmax(
+                module.weight, n_bits=8
+            )
+            print(torch.equal(temp, temp2))
+            # print(temp)
+            # print(temp2)
+            
         elif weight_quant == "per_tensor":
             new_module.weight = quantize_weight_per_tensor_absmax(
                 module.weight, n_bits=8
