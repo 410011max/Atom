@@ -1,4 +1,6 @@
 import os
+import random
+import numpy as np
 import torch
 from quant import *
 from outlier import *
@@ -12,6 +14,14 @@ from LMClass import LMClass
 from eval import pattern_match
 from lm_eval import tasks as lm_tasks
 from lm_eval import evaluator as lm_evaluator
+
+random.seed(0)
+np.random.seed(0)
+torch.manual_seed(0)
+torch.cuda.manual_seed(0)
+torch.cuda.manual_seed_all(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
 
 
 def get_llama(args):
@@ -211,6 +221,10 @@ if __name__ == '__main__':
         '--save_dir', type=str, default='./saved',
         help='Path to store the reordering indices and quantized weights.'
     )
+    parser.add_argument(
+        '--save_model', type=str, default=None,
+        help='Path to store the quantized model.'
+    )
     
     # microxscaling settings
     parser.add_argument("--mx", action="store_true", help="Whether to use microxcaling")
@@ -315,6 +329,9 @@ if __name__ == '__main__':
         }
         mx_specs = finalize_mx_specs(mx_specs)
         mx_mapping.inject_pyt_ops(mx_specs)
+
+    if args.save_model:
+        torch.save(model, args.save_model)
 
     if args.eval_ppl:
         datasets = ['wikitext2']
