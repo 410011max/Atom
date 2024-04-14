@@ -12,7 +12,7 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 # W16A16
 CUDA_VISIBLE_DEVICES=0 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --eval_ppl
+    --eval_ppl --eval_common_sense
 
 ##################################################################
 # region mx
@@ -29,12 +29,14 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 
 # endregion
 ##################################################################
+# region dynamic
 # SmoothQuant (per_tensor) (dynamic)
-CUDA_VISIBLE_DEVICES=1 \
-python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
+CUDA_VISIBLE_DEVICES=3 \
+python model/main.py meta-llama/Llama-2-7b-chat-hf wikitext2 \
     --smoothquant \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
-    --eval_ppl --quantize_output --skip_down_proj
+    --eval_ppl --quantize_output --skip_down_proj \
+    --save_model 'q_llama2_7b_chat_dynamic_per_tensor.pt'
 
 # SmoothQuant (per_channel + per_tensor) (dynamic)
 CUDA_VISIBLE_DEVICES=1 \
@@ -64,11 +66,16 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --w_quant 'per_channel' --a_quant 'per_token' --alpha 0.85 \
     --eval_ppl
 
+# endregion
+
+# region static
+
 # SmoothQuant (per_tensor) (static)
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES=3 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --smoothquant --static_scales 'act_scales/llama2-7b-hf-static-weight.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
+    --w_clip_ratio 1.0 --a_clip_ratio 0.65 \
     --eval_ppl  --quantize_output --skip_down_proj
 
 # SmoothQuant (per_8_channel) (static)
@@ -100,6 +107,8 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --static_scales 'act_scales/llama2-7b-hf-smooth-static.pt' \
     --w_quant 'per_channel' --a_quant 'per_token' \
     --eval_ppl --quantize_output
+
+# endregion
 
 ##################################################################
 # region Atom
