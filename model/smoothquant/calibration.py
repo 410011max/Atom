@@ -10,7 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 
-def get_act_scales(model, tokenizer, dataset_path, num_samples=512, seq_len=512):
+def get_smooth_scales(model, tokenizer, dataset_path, num_samples=512, seq_len=512):
     model.eval()
     device = next(model.parameters()).device
     act_scales = {}
@@ -118,6 +118,14 @@ def get_static_decoder_layer_scales(
     for hook in hooks:
         hook.remove()
 
+    # Find weight scales
+    for name, m in list(model.named_modules()):
+        if isinstance(m, torch.nn.Linear):
+            W = m.weight
+            scales = W.abs().max(dim=-1, keepdim=True)[0]
+            act_dict[name]["weight"] = scales
+    
+    
     decoder_layer_scales = []
     for idx in range(model.config.num_hidden_layers):
         scale_dict = defaultdict(dict)
