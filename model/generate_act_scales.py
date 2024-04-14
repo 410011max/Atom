@@ -7,7 +7,7 @@ from transformers import (
 )
 import argparse
 
-from smoothquant.calibration import get_act_scales, get_static_decoder_layer_scales
+from smoothquant.calibration import get_smooth_scales, get_static_decoder_layer_scales
 
 def build_model_and_tokenizer(model_name):
     tokenizer = AutoTokenizer.from_pretrained(model_name, model_max_length=512)
@@ -44,7 +44,7 @@ def main():
     #     raise FileNotFoundError
 
     if args.mode == 'smooth':
-        act_scales = get_act_scales(model, tokenizer, args.dataset_path,
+        act_scales = get_smooth_scales(model, tokenizer, args.dataset_path,
                                 args.num_samples, args.seq_len)
     elif args.mode == 'static':
         if args.smooth_scales:
