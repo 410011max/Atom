@@ -4,14 +4,14 @@ from functools import partial
 
 
 @torch.no_grad()
-def quantize_weight_per_channel_absmax(w, n_bits=8, scales=None):
+def quantize_weight_per_channel_absmax(w, n_bits=8, scales=None, clip_ratio=1.0):
     # w: (out_features, in_features)
     w = w.clone()
     if scales is None:
         scales = w.abs().max(dim=-1, keepdim=True)[0]
     # scales = w.abs().max(dim=-1, keepdim=True)[0]
     q_max = 2 ** (n_bits - 1) - 1
-    scales.clamp_(min=1e-5).div_(q_max)
+    scales.clamp_(min=1e-5).div_(q_max).mul_(clip_ratio)
     scales = scales.to(w.device)
     w.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
     return w
@@ -31,19 +31,19 @@ def quantize_weight_per_8_channel_absmax(w, n_bits=8):
     return w
 
 @torch.no_grad()
-def quantize_weight_per_tensor_absmax(w, n_bits=8, scales=None):
+def quantize_weight_per_tensor_absmax(w, n_bits=8, scales=None, clip_ratio=1.0):
     # w: (out_features, in_features)
     w = w.clone()
     scales = scales.max() if scales is not None else w.abs().max()
     q_max = 2 ** (n_bits - 1) - 1
-    scales.clamp_(min=1e-5).div_(q_max)
+    scales.clamp_(min=1e-5).div_(q_max).mul_(clip_ratio)
     scales = scales.to(w.device)
     w.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
     return w
 
 
 @torch.no_grad()
-def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
+def quantize_activation_per_token_absmax(t, n_bits=8, scales=None, clip_ratio=1.0):
     # static_scales = scales.copy()
     # scales = None
     # if scales is not None:
@@ -52,13 +52,13 @@ def quantize_activation_per_token_absmax(t, n_bits=8, scales=None):
     if scales is None:
         scales = t.abs().max(dim=-1, keepdim=True)[0]
     q_max = 2 ** (n_bits - 1) - 1
-    scales = scales.clamp(min=1e-5).div(q_max).to(t.device)
+    scales = scales.clamp(min=1e-5).div(q_max).mul_(clip_ratio).to(t.device)
     t.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
     return t
 
 
 @torch.no_grad()
-def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None):
+def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None, clip_ratio=1.0):
     # if scales is not None and scales.max() > 100:
     #     return t
     # static_scales = scales.clone().max()
@@ -68,7 +68,7 @@ def quantize_activation_per_tensor_absmax(t, n_bits=8, scales=None):
     scales = scales.max() if scales is not None else t.abs().max()
     # scales = scales.clamp(max=50.0)
     q_max = 2 ** (n_bits - 1) - 1
-    scales = scales.clamp(min=1e-5).div(q_max).to(t.device)
+    scales = scales.clamp(min=1e-5).div(q_max).mul_(clip_ratio).to(t.device)
     t.div_(scales).round_().clamp_(min=-q_max-1, max=q_max).mul_(scales)
     return t
 
@@ -82,6 +82,8 @@ class W8A8Linear(nn.Module):
         act_quant="per_token",
         quantize_output=False,
         scales=None,
+        w_clip_ratio=1.0,
+        a_clip_ratio=1.0,
     ):
         super().__init__()
         self.in_features = in_features
@@ -111,13 +113,15 @@ class W8A8Linear(nn.Module):
             self.act_quant_name = "per_token"
             self.act_quant = partial(
                 quantize_activation_per_token_absmax, n_bits=8, 
-                scales=scales['input'] if scales else None
+                scales=scales['input'] if scales else None,
+                clip_ratio=a_clip_ratio
             )
         elif act_quant == "per_tensor":
             self.act_quant_name = "per_tensor"
             self.act_quant = partial(
                 quantize_activation_per_tensor_absmax, n_bits=8, 
-                scales=scales['input'] if scales else None
+                scales=scales['input'] if scales else None, 
+                clip_ratio=a_clip_ratio,
             )
         else:
             raise ValueError(f"Invalid act_quant: {act_quant}")
@@ -126,7 +130,8 @@ class W8A8Linear(nn.Module):
             self.output_quant_name = self.act_quant_name
             self.output_quant = partial(
                 self.act_quant.func, n_bits=8, 
-                scales=scales['output'] if scales else None
+                scales=scales['output'] if scales else None,
+                clip_ratio=a_clip_ratio,
             )
         else:
             self.output_quant_name = "None"
@@ -149,7 +154,8 @@ class W8A8Linear(nn.Module):
 
     @staticmethod
     def from_float(
-        module, weight_quant="per_channel", act_quant="per_token", quantize_output=False, scales=None
+        module, weight_quant="per_channel", act_quant="per_token", quantize_output=False, 
+        scales=None, a_clip_ratio=1.0, w_clip_ratio=1.0
     ):
         assert isinstance(module, torch.nn.Linear)
         new_module = W8A8Linear(
@@ -159,10 +165,13 @@ class W8A8Linear(nn.Module):
             act_quant=act_quant,
             quantize_output=quantize_output,
             scales=scales,
+            a_clip_ratio=a_clip_ratio,
+            w_clip_ratio=w_clip_ratio,
         )
         if weight_quant == "per_channel":
             new_module.weight = quantize_weight_per_channel_absmax(
-                module.weight, n_bits=8, scales=scales['weight'] if scales else None
+                module.weight, n_bits=8, #scales=scales['weight'] if scales else None
+                clip_ratio=w_clip_ratio,
             )  # use 8-bit integer for weight
         elif weight_quant == "per_8_channel":
             new_module.weight = quantize_weight_per_8_channel_absmax(
@@ -180,7 +189,8 @@ class W8A8Linear(nn.Module):
             
         elif weight_quant == "per_tensor":
             new_module.weight = quantize_weight_per_tensor_absmax(
-                module.weight, n_bits=8, scales=scales['weight'] if scales else None
+                module.weight, n_bits=8, #scales=scales['weight'] if scales else None
+                clip_ratio=w_clip_ratio,
             )
         else:
             raise ValueError(f"Invalid weight_quant: {weight_quant}")

@@ -312,7 +312,8 @@ if __name__ == '__main__':
             print("Static scales provided. Using static scales for SmoothQuant.")
         scales = torch.load(args.static_scales) if args.static_scales else None
         model = quantize_llama(model, weight_quant=args.w_quant, act_quant=args.a_quant,
-                               quantize_output=args.quantize_output, scales=scales, skip_down_proj=args.skip_down_proj)
+                               scales=scales, a_clip_ratio=args.a_clip_ratio, w_clip_ratio=args.w_clip_ratio,
+                               quantize_output=args.quantize_output, skip_down_proj=args.skip_down_proj)
 
     if (args.mx):
         print("Using microxscaling dataformat.")
