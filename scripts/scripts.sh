@@ -73,10 +73,11 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 # SmoothQuant (per_tensor) (static)
 CUDA_VISIBLE_DEVICES=3 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --smoothquant --static_scales 'act_scales/llama2-7b-hf-static-weight.pt' \
+    --smoothquant --static_scales 'act_scales/llama2-7b-hf-static-weight-clip_0.75.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
-    --w_clip_ratio 1.0 --a_clip_ratio 0.65 \
-    --eval_ppl  --quantize_output --skip_down_proj
+    --w_clip_ratio 1.0 --a_clip_ratio 1.0 \
+    --eval_ppl --quantize_output --skip_down_proj \
+    --eval_common_sense 
 
 # SmoothQuant (per_8_channel) (static)
 CUDA_VISIBLE_DEVICES=2 \
