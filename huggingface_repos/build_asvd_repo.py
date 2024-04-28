@@ -70,10 +70,7 @@ def main(args):
             "AutoModelForCausalLM": "modeling_asvd_llama.ASVDLlamaForCausalLM",
         }
         config["architectures"] = ["ASVDLlamaForCausalLM"]
-        os.system(
-            "cp ./huggingface_repos/configuration_asvd_llama.py ./huggingface_repos/modeling_asvd_llama.py ./"
-            + save_path
-        )
+
     import json
 
     json.dump(config, open(save_path + "/config.json", "w"), indent=2)

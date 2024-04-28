@@ -84,12 +84,12 @@ class W8A8Linear(nn.Module):
             self.output_quant_name = "None"
             self.output_quant = nn.Identity()
 
-    def to(self, *self, **kwself):
-        super(W8A8Linear, self).to(*self, **kwself)
-        self.weight = self.weight.to(*self, **kwself)
-        if self.bias is not None:
-            self.bias = self.bias.to(*self, **kwself)
-        return self
+    # def to(self, *self, **kwself):
+    #     super(W8A8Linear, self).to(*self, **kwself)
+    #     self.weight = self.weight.to(*self, **kwself)
+    #     if self.bias is not None:
+    #         self.bias = self.bias.to(*self, **kwself)
+    #     return self
 
     @torch.no_grad()
     def forward(self, x):
@@ -176,12 +176,13 @@ class QuantLlamaForCausalLM(LlamaForCausalLM):
         self.quantize_output = config.quantize_output
         self.skip_down_proj = config.skip_down_proj
         self.static_scales = config.static_scales
+        self.seqlen = 2048
 
         print("SmoothQuant...")
         if self.static_scales:
             print("Static scales provided. Using static scales for SmoothQuant.")
         scales = torch.load(self.static_scales) if self.static_scales else None
-        model = quantize_llama(model, weight_quant=self.w_quant, act_quant=self.a_quant,
+        self = quantize_llama(self, weight_quant=self.w_quant, act_quant=self.a_quant,
                                scales=scales, a_clip_ratio=self.a_clip_ratio, w_clip_ratio=self.w_clip_ratio,
                                quantize_output=self.quantize_output, skip_down_proj=self.skip_down_proj)
                 
