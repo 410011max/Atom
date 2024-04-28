@@ -135,7 +135,6 @@ class W8A8Linear(nn.Module):
             )
         else:
             self.output_quant_name = "None"
-            # self.output_quant = lambda x: x
             self.output_quant = nn.Identity()
 
     def to(self, *args, **kwargs):
@@ -170,26 +169,16 @@ class W8A8Linear(nn.Module):
         )
         if weight_quant == "per_channel":
             new_module.weight = quantize_weight_per_channel_absmax(
-                module.weight, n_bits=8, #scales=scales['weight'] if scales else None
+                module.weight, n_bits=8, scales=scales['weight'] if scales else None,
                 clip_ratio=w_clip_ratio,
             )  # use 8-bit integer for weight
         elif weight_quant == "per_8_channel":
             new_module.weight = quantize_weight_per_8_channel_absmax(
                 module.weight, n_bits=8
-            )
-            temp = quantize_weight_per_8_channel_absmax(
-                module.weight, n_bits=8
-            )
-            temp2 = quantize_weight_per_channel_absmax(
-                module.weight, n_bits=8
-            )
-            print(torch.equal(temp, temp2))
-            # print(temp)
-            # print(temp2)
-            
+            )   
         elif weight_quant == "per_tensor":
             new_module.weight = quantize_weight_per_tensor_absmax(
-                module.weight, n_bits=8, #scales=scales['weight'] if scales else None
+                module.weight, n_bits=8, scales=scales['weight'] if scales else None,
                 clip_ratio=w_clip_ratio,
             )
         else:
