@@ -10,10 +10,12 @@ from pprint import pprint
 from modelutils_llama import quantize_model_llama, reorder_model_llama, quantize_model_gptq_llama,  add_act_quant_wrapper_llama
 from modelutils_opt import quantize_model_opt, reorder_model_opt, quantize_model_gptq_opt,  add_act_quant_wrapper_opt
 from parallel_utils import map_layers_to_multi_gpus
-from LMClass import LMClass
-from eval import pattern_match
-from lm_eval import tasks as lm_tasks
-from lm_eval import evaluator as lm_evaluator
+# from LMClass import LMClass
+# from eval import pattern_match
+# from lm_eval import tasks as lm_tasks
+# from lm_eval import evaluator as lm_evaluator
+from lm_harness_utils.eval_wrapper import eval_llama_zero_shot
+from transformers import AutoTokenizer
 
 random.seed(0)
 np.random.seed(0)
@@ -225,6 +227,10 @@ if __name__ == '__main__':
         '--save_model', type=str, default=None,
         help='Path to store the quantized model.'
     )
+    parser.add_argument(
+        '--save_hf_model', type=str, default=None,
+        help='Path to store the quantized model in huggingface format.'
+    )
     
     # microxscaling settings
     parser.add_argument("--mx", action="store_true", help="Whether to use microxcaling")
@@ -347,56 +353,115 @@ if __name__ == '__main__':
 
             print(f"targetResult,{dataset},{ppl:.3f}")
     
-    # eval zero shot accuracy on commonsense datasets
     if args.eval_common_sense:
-        lm = LMClass(args, model)
-        lm.seqlen = 2048
-        lm.model.eval()
-        for param in lm.model.parameters():
-            param.requires_grad = False
+        tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+        
+        # # Common Sense Reasoning Tasks
+        # task_list = ['lambada', 'openbookqa', 'arc_easy', 'winogrande', 'hellaswag', 'arc_challenge', 'piqa', 'boolq']
+        # results = eval_llama_zero_shot(model, tokenizer, batch_size=8, max_length=2048, task_list=task_list, num_fewshot=0)
+        
+        # MMLU
+        task_list = ['mmlu']
+        results = eval_llama_zero_shot(model, tokenizer, batch_size=1, max_length=2048, task_list=task_list, num_fewshot=5)
+        
+        # # GSM-8K
+        # task_list = ['gsm8k']
+        # results = eval_llama_zero_shot(model, tokenizer, batch_size=8, max_length=2048, task_list=task_list, num_fewshot=8)
+        
+        # MATH
+        task_list = ['minerva_math']
+        results = eval_llama_zero_shot(model, tokenizer, batch_size=8, max_length=2048, task_list=task_list, num_fewshot=4)
+        
+        
+    # eval zero shot accuracy on commonsense datasets
+    # if args.eval_common_sense:
+    #     lm = LMClass(args, model)
+    #     lm.seqlen = 2048
+    #     lm.model.eval()
+    #     for param in lm.model.parameters():
+    #         param.requires_grad = False
 
-        if args.multigpu:
-            if "llama" in args.model.lower():
-                map_layers_to_multi_gpus(lm.model.model.layers)
-                input_device = lm.model.model.layers[0].device
-                output_device = lm.model.model.layers[-1].device
-                assert input_device == output_device
-                lm._device = input_device
-                lm.model.model.embed_tokens.to(input_device)
-                lm.model.model.norm.to(output_device)
-                lm.model.lm_head.to(output_device)
-            elif "opt" in args.model.lower():
-                map_layers_to_multi_gpus(lm.model.model.decoder.layers)
-                input_device = lm.model.model.decoder.layers[0].device
-                output_device = lm.model.model.decoder.layers[-1].device
-                assert input_device == output_device
-                lm._device = input_device
-                lm.model.model.decoder.embed_tokens.to(input_device)
-                lm.model.model.decoder.embed_positions.to(input_device)
-                lm.model.model.decoder.final_layer_norm.to(input_device)
-                lm.model.lm_head.to(output_device)
-        else:
-            lm._device = DEV
-            lm.model = lm.model.to(lm.device)
+    #     if args.multigpu:
+    #         if "llama" in args.model.lower():
+    #             map_layers_to_multi_gpus(lm.model.model.layers)
+    #             input_device = lm.model.model.layers[0].device
+    #             output_device = lm.model.model.layers[-1].device
+    #             assert input_device == output_device
+    #             lm._device = input_device
+    #             lm.model.model.embed_tokens.to(input_device)
+    #             lm.model.model.norm.to(output_device)
+    #             lm.model.lm_head.to(output_device)
+    #         elif "opt" in args.model.lower():
+    #             map_layers_to_multi_gpus(lm.model.model.decoder.layers)
+    #             input_device = lm.model.model.decoder.layers[0].device
+    #             output_device = lm.model.model.decoder.layers[-1].device
+    #             assert input_device == output_device
+    #             lm._device = input_device
+    #             lm.model.model.decoder.embed_tokens.to(input_device)
+    #             lm.model.model.decoder.embed_positions.to(input_device)
+    #             lm.model.model.decoder.final_layer_norm.to(input_device)
+    #             lm.model.lm_head.to(output_device)
+    #     else:
+    #         lm._device = DEV
+    #         lm.model = lm.model.to(lm.device)
 
-        results = {}
-        tasks_str = "piqa,arc_easy,arc_challenge,boolq,hellaswag,winogrande"
-        task_names = pattern_match(tasks_str.split(","), lm_tasks.ALL_TASKS)
-        print(f"Selected Tasks: {task_names}")
+    #     results = {}
+    #     # tasks_str = "piqa,arc_easy,arc_challenge,boolq,hellaswag,winogrande"
+    #     # tasks_str = "openbookqa,arc_easy,winogrande,hellaswag,arc_challenge,piqa,boolq"
+    #     # task_names = pattern_match(tasks_str.split(","), lm_tasks.ALL_TASKS)
+        
+    #     # task_names = ['piqa', 'arc_easy', 'arc_challenge', 'boolq', 'hellaswag', 'winogrande']
+    #     task_names = ['mmlu']
+    #     print(f"Selected Tasks: {task_names}")
 
-        task_dict = lm_tasks.get_task_dict(task_names)
-        t_results = lm_evaluator.evaluate(
-            lm,
-            task_dict,
-            num_fewshot=args.lm_eval_num_fewshot,
-            limit=None if args.lm_eval_limit == -1 else args.lm_eval_limit
-        )
-        results.update(t_results)
-        pprint(results)
+    #     task_dict = lm_tasks.get_task_dict(task_names)
+    #     t_results = lm_evaluator.evaluate(
+    #         lm,
+    #         task_dict,
 
-        results_dict = results['results']
-        for task_name in tasks_str.split(','):
-            if task_name in ['piqa', 'arc_easy', 'arc_challenge', 'hellaswag']:
-                print(f"INFO {task_name} : {results_dict[task_name]['acc_norm']*100:.2f}")
-            else:
-                print(f"INFO {task_name} : {results_dict[task_name]['acc']*100:.2f}")
+    #         num_fewshot=args.lm_eval_num_fewshot,
+    #         limit=None if args.lm_eval_limit == -1 else args.lm_eval_limit
+    #     )
+    #     # t_results = lm_evaluator.simple_evaluate(
+    #     #     model="hf",
+    #     #     model_args="pretrained=meta-llama/Llama-2-7b-hf,dtype=float16",
+    #     #     tasks=task_names,
+    #     #     batch_size=8,
+    #     #     device=DEV,
+    #     #     num_fewshot=args.lm_eval_num_fewshot, 
+    #     #     limit=None if args.lm_eval_limit == -1 else args.lm_eval_limit
+    #     # )
+    #     results.update(t_results)
+    #     pprint(results)
+
+    #     results_dict = results['results']
+    #     for task_name in task_names:
+    #         if task_name in ['piqa', 'arc_easy', 'arc_challenge', 'hellaswag']:
+    #             print(f"INFO {task_name} : {results_dict[task_name]['acc_norm']*100:.2f}")
+    #         else:
+    #             print(f"INFO {task_name} : {results_dict[task_name]['acc']*100:.2f}")
+
+    if args.save_hf_model:
+        save_path = args.save_hf_model
+        tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+        tokenizer.save_pretrained(save_path)
+        model.save_pretrained(save_path)
+        config = model.config.to_dict()
+        config["auto_map"] = {
+            "AutoConfig": "configuration_quant_llama.QuantLlamaConfig",
+            "AutoModelForCausalLM": "modeling_quant_llama.QuantLlamaForCausalLM",
+        }
+        config["architectures"] = ["QuantLlamaForCausalLM"]
+        config["w_quant"] = args.w_quant
+        config["a_quant"] = args.a_quant
+        config["w_clip_ratio"] = args.w_clip_ratio
+        config["a_clip_ratio"] = args.a_clip_ratio
+        config["quantize_output"] = args.quantize_output
+        config["skip_down_proj"] = args.skip_down_proj
+        config["static_scales"] = args.static_scales
+
+        import json
+
+        json.dump(config, open(save_path + "/config.json", "w"), indent=2)
+
+        print("Done building huggingface model")
