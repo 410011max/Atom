@@ -10,25 +10,18 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 
 ##################################################################
 # W16A16
-CUDA_VISIBLE_DEVICES=0 \
+CUDA_VISIBLE_DEVICES=1 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
     --eval_ppl --eval_common_sense
 
-##################################################################
-# region mx
-# Mx
-CUDA_VISIBLE_DEVICES=2 \
-python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --mx --mx_format int8 --mx_block_size 32 --eval_ppl --seqlen 1024
+# meta-llama/Meta-Llama-3-8B
 
-# Mx (smooth)
-CUDA_VISIBLE_DEVICES=3 \
-python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --smooth_scales 'act_scales/llama2-7b-hf.pt' --alpha 0.85 \
-    --mx --mx_format int8 --mx_block_size 32 --eval_ppl --seqlen 1024
+CUDA_VISIBLE_DEVICES=0 \
+python model/main.py meta-llama/Meta-Llama-3-8B wikitext2 \
+    --eval_ppl  --eval_common_sense
 
-# endregion
 ##################################################################
+
 # region dynamic
 # SmoothQuant (per_tensor) (dynamic)
 CUDA_VISIBLE_DEVICES=3 \
@@ -70,14 +63,29 @@ python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
 
 # region static
 
+CUDA_VISIBLE_DEVICES=3 lm_eval --model hf  \
+--model_args pretrained=q_llama2_7b_hf,parallelize=True  \
+--tasks wikitext,openbookqa,arc_easy,winogrande,hellaswag,arc_challenge  \
+--batch_size 8
+
 # SmoothQuant (per_tensor) (static)
-CUDA_VISIBLE_DEVICES=3 \
+CUDA_VISIBLE_DEVICES=1 \
 python model/main.py meta-llama/Llama-2-7b-hf wikitext2 \
-    --smoothquant --static_scales 'act_scales/llama2-7b-hf-static-weight-clip_0.75.pt' \
+    --smoothquant --static_scales 'act_scales/llama2-7b-hf-static-weight.pt' \
     --w_quant 'per_tensor' --a_quant 'per_tensor' \
-    --w_clip_ratio 1.0 --a_clip_ratio 1.0 \
-    --eval_ppl --quantize_output --skip_down_proj \
-    --eval_common_sense 
+    --w_clip_ratio 0.75 --a_clip_ratio 0.75 \
+    --quantize_output --skip_down_proj \
+    --eval_ppl  --eval_common_sense | tee results/lm_eval/q_llama2_7b_per_tensor_w0.75_a0.75_new.txt \
+    --save_hf_model q_llama2_7b_hf
+
+CUDA_VISIBLE_DEVICES=3 \
+python model/main.py meta-llama/Meta-Llama-3-8B wikitext2 \
+    --smoothquant --static_scales 'act_scales/llama3-8b-hf-static-weight.pt' \
+    --w_quant 'per_tensor' --a_quant 'per_tensor' \
+    --w_clip_ratio 0.95 --a_clip_ratio 1.0 \
+    --quantize_output --skip_down_proj \
+    --eval_ppl  --eval_common_sense | tee results/lm_eval/q_llama3_8b_per_tensor_w0.95_a1.0_new.txt \
+    --save_hf_model q_llama3_8b_hf
 
 # SmoothQuant (per_8_channel) (static)
 CUDA_VISIBLE_DEVICES=2 \
