@@ -1,0 +1,92 @@
+SmoothQuant...
+Static scales provided. Using static scales for SmoothQuant.
+Evaluating wikitext2 ...
+targetResult,wikitext2,5.949
+bootstrapping for stddev: perplexity
+bootstrapping for stddev: perplexity
+|       Tasks       |Version|Filter|n-shot|  Metric  |Value |   |Stderr|
+|-------------------|-------|------|-----:|----------|-----:|---|-----:|
+|boolq              |      2|none  |     0|acc       |0.7523|±  |0.0076|
+|piqa               |      1|none  |     0|acc       |0.7693|±  |0.0098|
+|                   |       |none  |     0|acc_norm  |0.7764|±  |0.0097|
+|arc_challenge      |      1|none  |     0|acc       |0.4300|±  |0.0145|
+|                   |       |none  |     0|acc_norm  |0.4514|±  |0.0145|
+|hellaswag          |      1|none  |     0|acc       |0.5619|±  |0.0050|
+|                   |       |none  |     0|acc_norm  |0.7514|±  |0.0043|
+|winogrande         |      1|none  |     0|acc       |0.6740|±  |0.0132|
+|arc_easy           |      1|none  |     0|acc       |0.7551|±  |0.0088|
+|                   |       |none  |     0|acc_norm  |0.7374|±  |0.0090|
+|openbookqa         |      1|none  |     0|acc       |0.3260|±  |0.0210|
+|                   |       |none  |     0|acc_norm  |0.4220|±  |0.0221|
+|lambada            |N/A    |none  |     0|perplexity|4.4929|±  |0.0677|
+|                   |       |none  |     0|acc       |0.6764|±  |0.0046|
+| - lambada_openai  |      1|none  |     0|perplexity|4.0162|±  |0.0866|
+|                   |       |none  |     0|acc       |0.7068|±  |0.0063|
+| - lambada_standard|      1|none  |     0|perplexity|4.9697|±  |0.1040|
+|                   |       |none  |     0|acc       |0.6460|±  |0.0067|
+
+|                 Tasks                 |Version|Filter|n-shot|Metric|Value |   |Stderr|
+|---------------------------------------|-------|------|-----:|------|-----:|---|-----:|
+|mmlu                                   |N/A    |none  |     0|acc   |0.4190|±  |0.0041|
+| - humanities                          |N/A    |none  |     5|acc   |0.3947|±  |0.0069|
+|  - formal_logic                       |      0|none  |     5|acc   |0.2857|±  |0.0404|
+|  - high_school_european_history       |      0|none  |     5|acc   |0.5939|±  |0.0383|
+|  - high_school_us_history             |      0|none  |     5|acc   |0.4608|±  |0.0350|
+|  - high_school_world_history          |      0|none  |     5|acc   |0.5105|±  |0.0325|
+|  - international_law                  |      0|none  |     5|acc   |0.6281|±  |0.0441|
+|  - jurisprudence                      |      0|none  |     5|acc   |0.5093|±  |0.0483|
+|  - logical_fallacies                  |      0|none  |     5|acc   |0.4479|±  |0.0391|
+|  - moral_disputes                     |      0|none  |     5|acc   |0.4653|±  |0.0269|
+|  - moral_scenarios                    |      0|none  |     5|acc   |0.2380|±  |0.0142|
+|  - philosophy                         |      0|none  |     5|acc   |0.5177|±  |0.0284|
+|  - prehistory                         |      0|none  |     5|acc   |0.4722|±  |0.0278|
+|  - professional_law                   |      0|none  |     5|acc   |0.3299|±  |0.0120|
+|  - world_religions                    |      0|none  |     5|acc   |0.6433|±  |0.0367|
+| - other                               |N/A    |none  |     5|acc   |0.4812|±  |0.0088|
+|  - business_ethics                    |      0|none  |     5|acc   |0.4400|±  |0.0499|
+|  - clinical_knowledge                 |      0|none  |     5|acc   |0.4340|±  |0.0305|
+|  - college_medicine                   |      0|none  |     5|acc   |0.3873|±  |0.0371|
+|  - global_facts                       |      0|none  |     5|acc   |0.2900|±  |0.0456|
+|  - human_aging                        |      0|none  |     5|acc   |0.4933|±  |0.0336|
+|  - management                         |      0|none  |     5|acc   |0.4854|±  |0.0495|
+|  - marketing                          |      0|none  |     5|acc   |0.6453|±  |0.0313|
+|  - medical_genetics                   |      0|none  |     5|acc   |0.4600|±  |0.0501|
+|  - miscellaneous                      |      0|none  |     5|acc   |0.6028|±  |0.0175|
+|  - nutrition                          |      0|none  |     5|acc   |0.4706|±  |0.0286|
+|  - professional_accounting            |      0|none  |     5|acc   |0.2801|±  |0.0268|
+|  - professional_medicine              |      0|none  |     5|acc   |0.4375|±  |0.0301|
+|  - virology                           |      0|none  |     5|acc   |0.4157|±  |0.0384|
+| - social_sciences                     |N/A    |none  |     5|acc   |0.4608|±  |0.0088|
+|  - econometrics                       |      0|none  |     5|acc   |0.2544|±  |0.0410|
+|  - high_school_geography              |      0|none  |     5|acc   |0.4798|±  |0.0356|
+|  - high_school_government_and_politics|      0|none  |     5|acc   |0.6062|±  |0.0353|
+|  - high_school_macroeconomics         |      0|none  |     5|acc   |0.3615|±  |0.0244|
+|  - high_school_microeconomics         |      0|none  |     5|acc   |0.3655|±  |0.0313|
+|  - high_school_psychology             |      0|none  |     5|acc   |0.5431|±  |0.0214|
+|  - human_sexuality                    |      0|none  |     5|acc   |0.5038|±  |0.0439|
+|  - professional_psychology            |      0|none  |     5|acc   |0.3971|±  |0.0198|
+|  - public_relations                   |      0|none  |     5|acc   |0.4909|±  |0.0479|
+|  - security_studies                   |      0|none  |     5|acc   |0.4612|±  |0.0319|
+|  - sociology                          |      0|none  |     5|acc   |0.5622|±  |0.0351|
+|  - us_foreign_policy                  |      0|none  |     5|acc   |0.6400|±  |0.0482|
+| - stem                                |N/A    |none  |     5|acc   |0.3533|±  |0.0084|
+|  - abstract_algebra                   |      0|none  |     5|acc   |0.2600|±  |0.0441|
+|  - anatomy                            |      0|none  |     5|acc   |0.4519|±  |0.0430|
+|  - astronomy                          |      0|none  |     5|acc   |0.4474|±  |0.0405|
+|  - college_biology                    |      0|none  |     5|acc   |0.4236|±  |0.0413|
+|  - college_chemistry                  |      0|none  |     5|acc   |0.3200|±  |0.0469|
+|  - college_computer_science           |      0|none  |     5|acc   |0.3600|±  |0.0482|
+|  - college_mathematics                |      0|none  |     5|acc   |0.3300|±  |0.0473|
+|  - college_physics                    |      0|none  |     5|acc   |0.2353|±  |0.0422|
+|  - computer_security                  |      0|none  |     5|acc   |0.5100|±  |0.0502|
+|  - conceptual_physics                 |      0|none  |     5|acc   |0.3957|±  |0.0320|
+|  - electrical_engineering             |      0|none  |     5|acc   |0.4552|±  |0.0415|
+|  - elementary_mathematics             |      0|none  |     5|acc   |0.2619|±  |0.0226|
+|  - high_school_biology                |      0|none  |     5|acc   |0.4548|±  |0.0283|
+|  - high_school_chemistry              |      0|none  |     5|acc   |0.3005|±  |0.0323|
+|  - high_school_computer_science       |      0|none  |     5|acc   |0.3800|±  |0.0488|
+|  - high_school_mathematics            |      0|none  |     5|acc   |0.2889|±  |0.0276|
+|  - high_school_physics                |      0|none  |     5|acc   |0.3113|±  |0.0378|
+|  - high_school_statistics             |      0|none  |     5|acc   |0.2778|±  |0.0305|
+|  - machine_learning                   |      0|none  |     5|acc   |0.3482|±  |0.0452|
+

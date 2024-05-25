@@ -1,0 +1,25 @@
+Evaluating wikitext2 ...
+targetResult,wikitext2,6.136
+bootstrapping for stddev: perplexity
+bootstrapping for stddev: perplexity
+|       Tasks       |Version|Filter|n-shot|  Metric  |Value |   |Stderr|
+|-------------------|-------|------|-----:|----------|-----:|---|-----:|
+|boolq              |      2|none  |     0|acc       |0.8135|±  |0.0068|
+|piqa               |      1|none  |     0|acc       |0.7971|±  |0.0094|
+|                   |       |none  |     0|acc_norm  |0.8079|±  |0.0092|
+|arc_challenge      |      1|none  |     0|acc       |0.5051|±  |0.0146|
+|                   |       |none  |     0|acc_norm  |0.5333|±  |0.0146|
+|hellaswag          |      1|none  |     0|acc       |0.6018|±  |0.0049|
+|                   |       |none  |     0|acc_norm  |0.7918|±  |0.0041|
+|winogrande         |      1|none  |     0|acc       |0.7261|±  |0.0125|
+|arc_easy           |      1|none  |     0|acc       |0.8009|±  |0.0082|
+|                   |       |none  |     0|acc_norm  |0.7769|±  |0.0085|
+|openbookqa         |      1|none  |     0|acc       |0.3480|±  |0.0213|
+|                   |       |none  |     0|acc_norm  |0.4500|±  |0.0223|
+|lambada            |N/A    |none  |     0|perplexity|3.4776|±  |0.0479|
+|                   |       |none  |     0|acc       |0.7258|±  |0.0044|
+| - lambada_openai  |      1|none  |     0|perplexity|3.0917|±  |0.0569|
+|                   |       |none  |     0|acc       |0.7601|±  |0.0059|
+| - lambada_standard|      1|none  |     0|perplexity|3.8635|±  |0.0771|
+|                   |       |none  |     0|acc       |0.6914|±  |0.0064|
+
